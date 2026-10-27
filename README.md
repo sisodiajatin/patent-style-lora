@@ -21,6 +21,18 @@ Open each notebook in Colab with **File → Upload notebook** (or open it from `
 | 4 | `03_eval_colab.ipynb`, rest | **L4** | full eval with your checkpoint, publish to the Hub | 40 min |
 | 5 | `demo/` | Hugging Face Space | upload `app.py`, `requirements.txt`, `SPACE_README.md` (as `README.md`) to a ZeroGPU Space | 20 min |
 
+### Using the Colab extension in VS Code
+
+The notebooks also run from VS Code with Google's Colab extension:
+
+1. Open this project folder in VS Code and open a notebook from `notebooks/`.
+2. **Select Kernel → Colab → New Colab Server**, and choose the machine type (CPU for notebook 01, L4 for 02 and 03).
+3. Run the cells as usual. Drive mounting and the picker/caption widgets work. The code runs on Colab's machine,
+   not your laptop, so the project still has to be on Drive (the zip in `MyDrive/patent-lora/`).
+
+Differences from the browser: the Hugging Face upload cell asks you to paste your token instead of reading
+Colab Secrets, and if the last "disconnect" cell can't stop the runtime, use **Command Palette → Colab: Remove Server**.
+
 Expect roughly 5-8 compute units for one full run. Each GPU notebook ends with a cell that disconnects
 the runtime; run it so an idle GPU doesn't keep using units.
 
