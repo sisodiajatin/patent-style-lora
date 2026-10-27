@@ -111,6 +111,11 @@ def main() -> None:
     args = ap.parse_args()
 
     names = [n for n in args.selection.read_text().splitlines() if n.strip() and not n.startswith("#")]
+    if not names:
+        raise SystemExit(f"No picks in {args.selection}. Tick drawings in the picker first.")
+    if not any(args.raw.rglob("*.png")):
+        raise SystemExit(f"No downloaded drawings under {args.raw}. The runtime probably restarted: "
+                         "re-run the download cell (your picks are safe on Drive), then this step.")
     args.out.mkdir(parents=True, exist_ok=True)
     rows = []
     for name in names:
@@ -135,6 +140,9 @@ def main() -> None:
             "review": review,
         })
 
+    if not rows:
+        raise SystemExit("None of the picks were found among the downloaded drawings, so nothing was cleaned. "
+                         "Re-run the download cell with the same shards, then this step.")
     with args.manifest.open("w", newline="") as fh:
         writer = csv.DictWriter(fh, fieldnames=list(rows[0].keys()) if rows else ["file_name"])
         writer.writeheader()
