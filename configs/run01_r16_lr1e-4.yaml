@@ -1,0 +1,36 @@
+# Training config for the first SDXL run. Commit a copy of this file for every run you keep.
+# Read by notebooks/02_train_colab.ipynb and turned into flags for
+# diffusers/examples/text_to_image/train_text_to_image_lora_sdxl.py
+
+run_name: run01_r16_lr1e-4
+
+# Models
+pretrained_model_name_or_path: stabilityai/stable-diffusion-xl-base-1.0
+pretrained_vae_model_name_or_path: madebyollin/sdxl-vae-fp16-fix   # avoids NaNs in fp16 VAE decoding
+
+# Data (imagefolder with metadata.jsonl, built by scripts/caption.py build)
+train_data_dir: dataset/images
+image_column: image
+caption_column: text
+resolution: 1024
+
+# LoRA
+rank: 16            # the script sets lora_alpha = rank, so the scale is 1
+
+# Optimization
+train_batch_size: 1
+gradient_accumulation_steps: 1
+max_train_steps: 1500      # 20 images x 75 passes each; checkpoints decide the real stop
+learning_rate: 1.0e-4
+lr_scheduler: constant
+lr_warmup_steps: 0
+use_8bit_adam: true
+gradient_checkpointing: true
+mixed_precision: bf16      # L4 and A100 support bf16; use fp16 on a T4
+seed: 42
+
+# Checkpointing
+checkpointing_steps: 250
+checkpoints_total_limit: 8
+report_to: tensorboard
+dataloader_num_workers: 2

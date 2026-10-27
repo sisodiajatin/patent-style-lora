@@ -1,8 +1,8 @@
-# Training config for the first SDXL run. Commit a copy of this file for every run you keep.
+# Training config for run02 (run01 settings kept in configs/run01_r16_lr1e-4.yaml). Commit a copy of this file for every run you keep.
 # Read by notebooks/02_train_colab.ipynb and turned into flags for
 # diffusers/examples/text_to_image/train_text_to_image_lora_sdxl.py
 
-run_name: run01_r16_lr1e-4
+run_name: run02_r16_lr1e-4_te_noff
 
 # Models
 pretrained_model_name_or_path: stabilityai/stable-diffusion-xl-base-1.0
@@ -20,7 +20,7 @@ rank: 16            # the script sets lora_alpha = rank, so the scale is 1
 # Optimization
 train_batch_size: 1
 gradient_accumulation_steps: 1
-max_train_steps: 1500      # 20 images x 75 passes each; checkpoints decide the real stop
+max_train_steps: 3000      # run01 was still improving at 1500
 learning_rate: 1.0e-4
 lr_scheduler: constant
 lr_warmup_steps: 0
@@ -28,9 +28,11 @@ use_8bit_adam: true
 gradient_checkpointing: true
 mixed_precision: bf16      # L4 and A100 support bf16; use fp16 on a T4
 seed: 42
+noise_offset: 0.1          # run01 never reached a white page; offset noise lets the model hit pure white
+train_text_encoder: true   # run01's trigger word barely bound (desk lamp unchanged at any strength)
 
 # Checkpointing
-checkpointing_steps: 250
+checkpointing_steps: 500
 checkpoints_total_limit: 8
 report_to: tensorboard
 dataloader_num_workers: 2
