@@ -1,0 +1,8 @@
+# Laptop: data prep, captioning, tests. (GPU torch for the RTX 5060: see README setup.)
+numpy
+scipy
+pillow
+huggingface_hub
+transformers>=4.44.0
+torch
+pytest

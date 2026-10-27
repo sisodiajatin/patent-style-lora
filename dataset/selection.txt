@@ -1,0 +1,4 @@
+# One drawing-sheet ID per line (file name without .png), picked from dataset/candidates/sheets/.
+# Lines starting with # are ignored. Aim for ~25 picks, keep the best 20 after cleaning.
+# Example:
+# USD0806350-20180102-D00000

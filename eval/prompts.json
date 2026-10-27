@@ -1,0 +1,20 @@
+{
+  "seeds": [11, 42, 2026],
+  "steps": 30,
+  "guidance_scale": 6.0,
+  "resolution": 1024,
+  "negative_prompt": "color, gray background, photo, photorealistic, 3D render, blurry, text, watermark",
+  "lora_strengths": [0.4, 0.7, 1.0],
+  "subjects": [
+    {"object": "a chair", "view": "perspective view", "seen_type": true},
+    {"object": "a kettle", "view": "side view", "seen_type": true},
+    {"object": "a desk lamp", "view": "perspective view", "seen_type": true},
+    {"object": "a sneaker", "view": "side view", "seen_type": true},
+    {"object": "a quadcopter drone", "view": "perspective view", "seen_type": false},
+    {"object": "a smartwatch", "view": "front view", "seen_type": false},
+    {"object": "a VR headset", "view": "perspective view", "seen_type": false},
+    {"object": "an electric scooter", "view": "side view", "seen_type": false},
+    {"object": "a robot arm", "view": "perspective view", "seen_type": false},
+    {"object": "a foldable phone", "view": "perspective view", "seen_type": false}
+  ]
+}

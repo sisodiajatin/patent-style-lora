@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Raw downloads and contact sheets are large and reproducible: keep them out of git
+dataset/candidates/
+
+# Training outputs live on Google Drive, not in the repo
+output/
+*.safetensors
+
+# Eval images are large; commit only grids and CSVs you want to show
+eval/results/*/images/
