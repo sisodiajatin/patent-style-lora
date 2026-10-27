@@ -19,3 +19,11 @@ One entry per work session: what you did, what you learned, what surprised you.
 - Diagnosis: (1) undertrained, (2) trigger weakly bound (UNet-only), (3) mid-tone drift: backgrounds peach/pink, a known
   diffusion limitation for mostly-white images.
 - Run 02 changes: noise_offset 0.1, train_text_encoder, 3000 steps.
+
+## Run 02 (2026-10-27): r16, lr 1e-4, 3000 steps, + text encoder, + noise_offset 0.1
+- Every probe prompt (drone, kettle, smartwatch, desk lamp) is a clean single-object line drawing on a pure white page
+  from step 500 on. Drone, smartwatch and desk lamp were not in the training set: the style generalizes.
+- Picked up the design-patent convention of dashed lines for unclaimed parts (smartwatch band).
+- Steps 1000-1500: best balance of crisp lines and correct subjects.
+- Steps 2500-3000: overfitting. The quadcopter grows six arms, the watch turns almost entirely dashed, lamp lines go faint.
+- Takeaway: noise offset fixed the background; text-encoder training fixed trigger binding. Picked checkpoint-1500 for eval.

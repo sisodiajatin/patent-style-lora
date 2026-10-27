@@ -5,7 +5,7 @@ gadget into a black-and-white patent figure. Then evaluate it honestly against p
 
 ## Status
 
-Work in progress. Dataset built, baselines rendered, first training run done.
+Work in progress. Dataset built, baselines rendered, two training runs done, full evaluation next.
 
 **Baseline finding.** SDXL already draws decent line art when prompted with "patent drawing … black and white
 line art", but gets the page wrong: beige "old paper" backgrounds, fake text and title blocks, several objects
@@ -16,7 +16,11 @@ centered line drawings only in the last checkpoints, still on peach/pink backgro
 Raising LoRA strength added hatching texture but never a white page. Diagnosis: undertrained, weak trigger
 binding, and the mid-tone drift diffusion models show on mostly-white images.
 
-**Run 02** (in progress): adds noise offset 0.1, text-encoder training, and 3,000 steps.
+**Run 02** (noise offset 0.1, text-encoder training, 3,000 steps): works. Every probe prompt, including objects not in
+the training set (drone, smartwatch, desk lamp), comes out as a single clean line drawing on a pure white page, and it
+picked up the design-patent convention of dashed lines for unclaimed parts. Checkpoints after ~2,000 steps overfit (the
+quadcopter grows six arms, lines turn mostly dashed), so checkpoint-1500 is the pick. Full evaluation against plain
+prompting is next.
 Full notes: [`notes/learning-log.md`](notes/learning-log.md). Configs for each run are in [`configs/`](configs/).
 
 ## Run it entirely in Google Colab
