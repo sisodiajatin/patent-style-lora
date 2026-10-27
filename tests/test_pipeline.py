@@ -107,3 +107,71 @@ def test_pixel_metrics():
 
     gray = Image.new("RGB", (200, 200), (128, 128, 128))
     assert all_metrics(gray)["gray_share"] == 1.0 and all_metrics(gray)["color_leak"] == 0.0
+
+
+# ---- Colab widgets (skipped if ipywidgets is not installed) -----------------
+def _make_sheets(tmp_path, n):
+    raw = tmp_path / "raw" / "data" / "data_0"
+    raw.mkdir(parents=True)
+    for i in range(n):
+        fake_sheet(raw / f"USD{900000 + i:07d}-20200101-D00000.png")
+    return tmp_path / "raw"
+
+
+def test_picker_saves_ticks(tmp_path):
+    W = pytest.importorskip("ipywidgets")
+    from colab_ui import picker
+    raw = _make_sheets(tmp_path, 5)
+    sel = tmp_path / "selection.txt"
+    ui = picker(raw, sel, per_page=2)
+    grid = ui.children[-1]
+    assert len(grid.children) == 2
+    grid.children[1].children[1].value = True          # tick 2nd tile on page 1
+    ui.children[0].children[1].click()                 # Next page
+    grid.children[0].children[1].value = True          # tick 1st tile on page 2
+    picked = [l for l in sel.read_text().splitlines() if not l.startswith("#")]
+    assert picked == ["USD0900001-20200101-D00000", "USD0900002-20200101-D00000"]
+    grid.children[0].children[1].value = False         # untick
+    assert [l for l in sel.read_text().splitlines() if not l.startswith("#")] == ["USD0900001-20200101-D00000"]
+    # re-opening restores ticks
+    ui2 = picker(raw, sel, per_page=2)
+    assert ui2.children[-1].children[1].children[1].value is True
+
+
+def test_review_and_caption_editor(tmp_path):
+    pytest.importorskip("ipywidgets")
+    import json
+    from colab_ui import caption_editor, review
+    from prepare_data import process
+    raw = _make_sheets(tmp_path, 3)
+    imgs = tmp_path / "images"
+    imgs.mkdir()
+    stems = []
+    for f in sorted(raw.rglob("*.png")):
+        process(f)[0].save(imgs / f.name)
+        stems.append(f.stem)
+    sel = tmp_path / "selection.txt"
+    sel.write_text("\n".join(stems))
+    man = tmp_path / "manifest.csv"
+    man.write_text("file_name,review\n" + "".join(f"{s}.png,\n" for s in stems))
+
+    rv = review(imgs, sel, man)
+    rv.children[1].children[0].children[2].value = True   # remove first image
+    rv.children[2].click()
+    assert len(list(imgs.glob("*.png"))) == 2
+    assert stems[0] not in sel.read_text() and stems[0] not in man.read_text()
+
+    cap = tmp_path / "captions.csv"
+    ed = caption_editor(imgs, cap)
+    save_btn, status = ed.children[-1], ed.children[0]
+    save_btn.click()
+    assert "Fill in the object" in status.value          # empty objects are refused
+    for i, row in enumerate(ed.children[1:-1]):
+        fields = row.children[1].children
+        fields[1].value = f"a widget number {i}"
+        fields[2].value = "side view"
+    save_btn.click()
+    assert "Saved 2 captions" in status.value
+    lines = [json.loads(l) for l in (imgs / "metadata.jsonl").read_text().splitlines()]
+    assert [l["text"] for l in lines] == ["ptnt_style, side view of a widget number 0",
+                                          "ptnt_style, side view of a widget number 1"]
