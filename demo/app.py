@@ -20,7 +20,7 @@ except ImportError:  # local run
         return fn
 
 BASE = "stabilityai/stable-diffusion-xl-base-1.0"
-LORA = os.environ.get("LORA_REPO", "sisodiajatin/patent-drawing-style-lora")
+LORA = os.environ.get("LORA_REPO", "sisodiajatin/patent-style-lora")
 TRIGGER = "ptnt_style"
 NEG = "color, gray background, photo, photorealistic, 3D render, blurry, text, watermark"
 VIEWS = ["perspective view", "front view", "side view", "top view", "exploded view"]
