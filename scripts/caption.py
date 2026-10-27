@@ -60,14 +60,19 @@ def build_text(obj: str, view: str) -> str:
 def cmd_draft(images: Path, out_csv: Path, model: str) -> None:
     import torch
     from PIL import Image
-    from transformers import pipeline
+    from transformers import BlipForConditionalGeneration, BlipProcessor
 
-    device = 0 if torch.cuda.is_available() else -1
-    captioner = pipeline("image-to-text", model=model, device=device)
+    # Load BLIP directly: the "image-to-text" pipeline shortcut was removed in newer transformers.
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    processor = BlipProcessor.from_pretrained(model)
+    blip = BlipForConditionalGeneration.from_pretrained(model).to(device).eval()
     files = sorted(p for p in images.glob("*.png"))
     rows = []
     for f in files:
-        raw = captioner(Image.open(f).convert("RGB"), max_new_tokens=30)[0]["generated_text"]
+        inputs = processor(images=Image.open(f).convert("RGB"), return_tensors="pt").to(device)
+        with torch.no_grad():
+            out = blip.generate(**inputs, max_new_tokens=30)
+        raw = processor.decode(out[0], skip_special_tokens=True)
         rows.append({"file_name": f.name, "object": clean_caption(raw), "view": "perspective view",
                      "blip_raw": raw})
         print(f"{f.name}: {rows[-1]['object']}   (raw: {raw})")
