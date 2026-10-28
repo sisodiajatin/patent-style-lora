@@ -5,7 +5,7 @@ gadget into a black-and-white patent figure. Then evaluate it honestly against p
 
 ## Status
 
-Work in progress. Dataset built, baselines rendered, two training runs done, full evaluation next.
+Dataset built, two training runs, full evaluation done. Next: publish the LoRA and the demo.
 
 **Baseline finding.** SDXL already draws decent line art when prompted with "patent drawing … black and white
 line art", but gets the page wrong: beige "old paper" backgrounds, fake text and title blocks, several objects
@@ -17,10 +17,34 @@ Raising LoRA strength added hatching texture but never a white page. Diagnosis: 
 binding, and the mid-tone drift diffusion models show on mostly-white images.
 
 **Run 02** (noise offset 0.1, text-encoder training, 3,000 steps): works. Every probe prompt, including objects not in
-the training set (drone, smartwatch, desk lamp), comes out as a single clean line drawing on a pure white page, and it
-picked up the design-patent convention of dashed lines for unclaimed parts. Checkpoints after ~2,000 steps overfit (the
-quadcopter grows six arms, lines turn mostly dashed), so checkpoint-1500 is the pick. Full evaluation against plain
-prompting is next.
+the training set, comes out as a single clean line drawing on a pure white page, and it picked up the design-patent
+convention of dashed lines for unclaimed parts. Checkpoints after ~2,000 steps overfit (the quadcopter grows six arms,
+lines turn mostly dashed), so checkpoint-1500 is the pick.
+
+## Results (run 02, checkpoint-1500)
+
+Fixed eval: 10 subjects (4 object types like the training set, 6 unseen gadgets) × 3 seeds, same sampler, steps, CFG
+and negative prompt for every condition. Means per condition; "unseen" = drone, smartwatch, VR headset, electric
+scooter, robot arm, foldable phone.
+
+| Condition | Subjects | White border ↑ | Gray share ↓ | Color leak ↓ | CLIP subject ↑ | Sim. to training set |
+| --- | --- | --- | --- | --- | --- | --- |
+| A: base prompt, no LoRA | unseen | 0.001 | 0.746 | 0.719 | 0.284 | 0.474 |
+| B: "patent drawing … line art", no LoRA | unseen | 0.440 | 0.241 | 0.000 | 0.301 | 0.601 |
+| **C: LoRA @ 0.7** | **unseen** | **0.998** | **0.038** | **0.000** | **0.316** | 0.678 |
+| C: LoRA @ 1.0 | unseen | 0.999 | 0.027 | 0.000 | 0.308 | 0.696 |
+| B: prompt only | seen-type | 0.151 | 0.186 | 0.049 | 0.302 | 0.507 |
+| **C: LoRA @ 0.7** | **seen-type** | **0.999** | **0.023** | **0.000** | **0.315** | 0.693 |
+
+- Against the best plain prompt (B), the LoRA turns beige "old paper" pages white (border 0.44 → 0.998) and cuts
+  mid-gray shading 6-8×, while the CLIP subject score holds or slightly improves. It generalizes: unseen gadgets score
+  the same as seen object types.
+- 0.7 is the recommended strength: 1.0 whitens slightly more but starts to cost subject fidelity.
+- Adding style words on top of the trigger (condition D) changes almost nothing; the trigger carries the style.
+- Limits: these are automated proxies on 30 images per condition. They don't catch fake text, extra objects or
+  mechanically impossible parts; check the grids. Similarity to the training set rises (0.60 → 0.68), consistent with
+  learning the style rather than copying images, but it is not a full memorization test.
+
 Full notes: [`notes/learning-log.md`](notes/learning-log.md). Configs for each run are in [`configs/`](configs/).
 
 ## Run it entirely in Google Colab

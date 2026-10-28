@@ -27,3 +27,12 @@ One entry per work session: what you did, what you learned, what surprised you.
 - Steps 1000-1500: best balance of crisp lines and correct subjects.
 - Steps 2500-3000: overfitting. The quadcopter grows six arms, the watch turns almost entirely dashed, lamp lines go faint.
 - Takeaway: noise offset fixed the background; text-encoder training fixed trigger binding. Picked checkpoint-1500 for eval.
+
+## Eval (2026-10-27): run02 checkpoint-1500, 10 subjects x 3 seeds
+- LoRA @ 0.7 vs prompt-only (B), unseen subjects: white border 0.440 -> 0.998, gray share 0.241 -> 0.038,
+  CLIP subject 0.301 -> 0.316. Seen-type subjects: border 0.151 -> 0.999, gray 0.186 -> 0.023.
+- Unseen gadgets score the same as seen object types: the style generalizes.
+- Strength 1.0 whitens slightly more but CLIP subject drops to 0.308: 0.7 is the default.
+- Trigger + style words (D) ~= trigger alone (C@0.7).
+- Similarity to training set 0.60 -> 0.68: consistent with style learning; still check grids for copying,
+  fake text and extra objects, which these metrics don't measure.
