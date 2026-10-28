@@ -31,7 +31,7 @@ from diffusers import AutoPipelineForText2Image
 
 pipe = AutoPipelineForText2Image.from_pretrained(
     "stabilityai/stable-diffusion-xl-base-1.0", torch_dtype=torch.float16).to("cuda")
-pipe.load_lora_weights("sisodiajatin/patent-style-lora")
+pipe.load_lora_weights("Jatin1999/patent-style-lora")
 image = pipe("ptnt_style, side view of an electric scooter",
              negative_prompt="color, photo, 3D render, text").images[0]
 ```
