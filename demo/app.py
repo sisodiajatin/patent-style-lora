@@ -14,7 +14,9 @@ from diffusers import AutoencoderKL, StableDiffusionXLPipeline
 
 try:
     import spaces  # available on Hugging Face Spaces
-    gpu = spaces.GPU(duration=60)
+    # ZeroGPU charges the requested duration against each visitor's daily quota, so keep it tight:
+    # two 1024px SDXL images at <=30 steps take well under 40 s on ZeroGPU hardware.
+    gpu = spaces.GPU(duration=40)
 except ImportError:  # local run
     def gpu(fn):
         return fn
@@ -59,7 +61,7 @@ with gr.Blocks(title="Patent My Idea") as demo:
         view = gr.Dropdown(VIEWS, value=VIEWS[0], label="View")
     with gr.Row():
         seed = gr.Number(value=42, precision=0, label="Seed")
-        strength = gr.Slider(0, 1.2, value=0.8, step=0.05, label="LoRA strength")
+        strength = gr.Slider(0, 1.2, value=0.7, step=0.05, label="LoRA strength")
         steps = gr.Slider(10, 30, value=25, step=1, label="Steps")
     btn = gr.Button("Generate", variant="primary")
     with gr.Row():
