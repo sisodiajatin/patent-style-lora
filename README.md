@@ -9,6 +9,24 @@ SDXL LoRA that turns any object into a US patent-style drawing: black lines, whi
 | Strength | 0.7 |
 | Base | SDXL base 1.0 |
 
+## Usage
+
+```python
+import torch
+from diffusers import StableDiffusionXLPipeline
+
+pipe = StableDiffusionXLPipeline.from_pretrained(
+    "stabilityai/stable-diffusion-xl-base-1.0", torch_dtype=torch.float16).to("cuda")
+pipe.load_lora_weights("Jatin1999/patent-style-lora", adapter_name="patent")
+pipe.set_adapters(["patent"], adapter_weights=[0.7])
+
+image = pipe("ptnt_style, perspective view of a quadcopter drone",
+             negative_prompt="color, gray background, photo, 3D render, text").images[0]
+image.save("drone.png")
+```
+
+Needs a GPU with ~10 GB of VRAM (or `pipe.enable_model_cpu_offload()` instead of `.to("cuda")` on 8 GB).
+
 ## Objective
 
 Train a style LoRA on 24 images and test whether it beats a well-written prompt ("patent drawing, black and white line art").
@@ -40,9 +58,11 @@ Unseen objects (drone, smartwatch, VR headset, scooter, robot arm, foldable phon
 | **LoRA @ 0.7** | **0.998** | **0.038** | **0.316** |
 | LoRA @ 1.0 | 0.999 | 0.027 | 0.308 |
 
+*White border:* share of near-white pixels at the image edge. *Gray share:* share of mid-gray pixels (line art is mostly pure black or white). *CLIP subject:* similarity to the plain object name, i.e. whether the drone is still a drone.
+
 - White page instead of beige paper; 6× less gray shading; subject preserved.
 - Same results on unseen objects as on trained object types.
-- Run 1 (UNet only, no noise offset) failed: colored backgrounds, weak trigger. Noise offset and text-encoder training fixed both.
+- Run 1 (UNet only, 1,500 steps) failed: colored backgrounds, weak trigger. Run 2 added noise offset, text-encoder training and more steps, which resolved both.
 - Checkpoints after ~2,000 steps overfit.
 
 Details: [`notes/learning-log.md`](notes/learning-log.md)
@@ -54,8 +74,8 @@ Details: [`notes/learning-log.md`](notes/learning-log.md)
 
 ## Reproduce
 
-1. Upload `patent-drawing-lora.zip` to `MyDrive/patent-lora/` in Google Drive.
-2. Run in Colab:
+1. Open the notebooks in Colab (File → Upload notebook). The first cell clones this repo into `MyDrive/patent-lora/repo`; everything is saved there.
+2. Run in order:
 
 | Notebook | Runtime | Purpose |
 | --- | --- | --- |
@@ -63,16 +83,19 @@ Details: [`notes/learning-log.md`](notes/learning-log.md)
 | `02_train_colab.ipynb` | L4 | train, compare checkpoints |
 | `03_eval_colab.ipynb` | L4 | baselines, eval, publish |
 
-3. Demo: upload `demo/app.py`, `demo/requirements.txt`, `demo/SPACE_README.md` (as `README.md`) to a Hugging Face ZeroGPU Space.
+3. Demo: upload `demo/app.py`, `demo/requirements.txt`, `demo/SPACE_README.md` (as `README.md`) to a Hugging Face ZeroGPU Space (free for accounts 30+ days old).
 
 ## Repo
 
 ```
 configs/     training configs per run
+dataset/     filled by notebook 01 (picks, images, captions, manifest)
+eval/        fixed eval prompts and seeds
 scripts/     data prep, captions, eval, metrics, Colab widgets
 notebooks/   Colab notebooks 01-03
 demo/        Gradio app + model card
-tests/       CPU tests
+notes/       run-by-run log
+tests/       CPU tests (pytest)
 ```
 
 ## Credits
