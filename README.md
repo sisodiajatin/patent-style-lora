@@ -3,9 +3,12 @@
 Train a small SDXL LoRA on 24 US design-patent drawings so that adding `ptnt_style` to a prompt turns any
 gadget into a black-and-white patent figure. Then evaluate it honestly against plain prompting and host a demo.
 
+**Model:** [huggingface.co/Jatin1999/patent-style-lora](https://huggingface.co/Jatin1999/patent-style-lora) (59.5 MB LoRA, trigger word `ptnt_style`, recommended strength 0.7)
+
 ## Status
 
-Dataset built, two training runs, full evaluation done. Next: publish the LoRA and the demo.
+Dataset built, two training runs, full evaluation done, LoRA published on Hugging Face. Next: the live demo
+(a Hugging Face ZeroGPU Space; free hosting opens once the account is 30 days old).
 
 **Baseline finding.** SDXL already draws decent line art when prompted with "patent drawing … black and white
 line art", but gets the page wrong: beige "old paper" backgrounds, fake text and title blocks, several objects
