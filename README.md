@@ -1,34 +1,69 @@
 # patent-style-lora
 
-Train a small SDXL LoRA on 24 US design-patent drawings so that adding `ptnt_style` to a prompt turns any
-gadget into a black-and-white patent figure. Then evaluate it honestly against plain prompting and host a demo.
+**Turn any gadget into a US patent drawing.** A small LoRA adapter for Stable Diffusion XL, trained on 24 public-domain
+US design-patent figures. Add the trigger word `ptnt_style` to a prompt and SDXL draws the object the way a patent
+does: black lines on a pure white page, line-based shading, one centered figure.
 
-**Model:** [huggingface.co/Jatin1999/patent-style-lora](https://huggingface.co/Jatin1999/patent-style-lora) (59.5 MB LoRA, trigger word `ptnt_style`, recommended strength 0.7)
+| | |
+| --- | --- |
+| **Model** | [huggingface.co/Jatin1999/patent-style-lora](https://huggingface.co/Jatin1999/patent-style-lora) (59.5 MB) |
+| **Trigger** | `ptnt_style, <view> of <object>`, e.g. `ptnt_style, perspective view of a quadcopter drone` |
+| **Strength** | 0.7 |
+| **Base model** | SDXL base 1.0 |
+| **Demo** | "Patent My Idea" Gradio app in [`demo/`](demo/), going live as a Hugging Face Space |
 
-## Status
+## Objective
 
-Dataset built, two training runs, full evaluation done, LoRA published on Hugging Face. Next: the live demo
-(a Hugging Face ZeroGPU Space; free hosting opens once the account is 30 days old).
+Learn how diffusion fine-tuning works end to end by training a style LoRA, and answer one question honestly:
+**does a 24-image LoRA beat a well-written prompt?** SDXL can already be asked for "a patent drawing", so a LoRA is
+only worth it if it measurably improves on that baseline, on objects it never saw in training.
 
-**Baseline finding.** SDXL already draws decent line art when prompted with "patent drawing … black and white
-line art", but gets the page wrong: beige "old paper" backgrounds, fake text and title blocks, several objects
-per image, scenery. The LoRA's job is the page: pure white, one centered object, no text.
+## Approach
 
-**Run 01** (rank 16, LR 1e-4, 1,500 steps, UNet only): partial. Kettle and smartwatch prompts switched to single
-centered line drawings only in the last checkpoints, still on peach/pink backgrounds; desk lamp stayed a photo.
-Raising LoRA strength added hatching texture but never a white page. Diagnosis: undertrained, weak trigger
-binding, and the mid-tone drift diffusion models show on mostly-white images.
+```mermaid
+flowchart LR
+    A[DeepPatent<br/>3,000 drawing sheets] --> B[Pre-screen:<br/>1,732 single-figure sheets]
+    B --> C[Hand-pick 24<br/>varied objects + views]
+    C --> D[Clean: strip labels,<br/>center, pad to 1024px]
+    D --> E[Caption: trigger +<br/>view + object]
+    E --> F[Train LoRA<br/>Colab L4]
+    F --> G[Pick checkpoint<br/>from a fixed-seed grid]
+    G --> H[Evaluate vs.<br/>prompt-only baseline]
+    H --> I[Publish to<br/>Hugging Face]
+```
 
-**Run 02** (noise offset 0.1, text-encoder training, 3,000 steps): works. Every probe prompt, including objects not in
-the training set, comes out as a single clean line drawing on a pure white page, and it picked up the design-patent
-convention of dashed lines for unclaimed parts. Checkpoints after ~2,000 steps overfit (the quadcopter grows six arms,
-lines turn mostly dashed), so checkpoint-1500 is the pick.
+- **Data.** US patent drawings are generally not subject to copyright, so the dataset is legally clean. Drawings come
+  from the DeepPatent dataset (US design patents). A script isolates the main figure, removes "FIG. 1" labels and
+  sheet numbers, and pads each figure onto a white 1024×1024 square.
+- **Captions** describe only the object and the view (`ptnt_style, side view of a car wheel rim`), never the style,
+  so the trigger word has to carry the style on its own.
+- **Training** uses the Hugging Face Diffusers SDXL LoRA script on a single NVIDIA L4 in Google Colab, with
+  checkpoints saved to Google Drive so runs survive disconnects.
+- **Evaluation** is fixed before training: 10 subjects (4 object types like the training set, 6 unseen gadgets) × 3
+  seeds, identical sampler, steps, CFG and negative prompt across four conditions: base prompt, prompt-only
+  ("patent drawing … black and white line art"), LoRA at 0.4 / 0.7 / 1.0, and LoRA plus style words.
 
-## Results (run 02, checkpoint-1500)
+## What we did
 
-Fixed eval: 10 subjects (4 object types like the training set, 6 unseen gadgets) × 3 seeds, same sampler, steps, CFG
-and negative prompt for every condition. Means per condition; "unseen" = drone, smartwatch, VR headset, electric
-scooter, robot arm, foldable phone.
+1. **Dataset.** Downloaded 3,000 drawing sheets, automatically pre-screened them to 1,732 that look like one clean
+   figure, and hand-picked 24 for variety: electronics (smartwatch, security camera, solar panel, heat-sink module),
+   kitchenware, tools, mechanical parts, a car wheel, apparel and footwear. A first pick of 25 consecutive patents was
+   mostly clothing, which would have taught "patent drawings of garments" instead of a style; 8 of them were kept and
+   the rest replaced with varied objects. BLIP's draft captions were mostly wrong on line art ("a book", "a beer keg"),
+   so every caption was rewritten by hand.
+2. **Baselines first.** Rendered the no-LoRA conditions before training, so training couldn't be tuned toward the test.
+3. **Run 01** (rank 16, LR 1e-4, 1,500 steps, UNet only): partial. Two of four probe prompts became centered line
+   drawings only in the last checkpoints, still on peach and pink backgrounds; the desk lamp stayed a photo. Raising the
+   LoRA strength added hatching texture but never produced a white page.
+4. **Diagnosis.** Three separate problems: undertrained, a weakly bound trigger word (only the UNet was trained), and
+   the drift toward mid-tones that diffusion models show when asked for mostly-white images.
+5. **Run 02** (+ noise offset 0.1, + text-encoder training, 3,000 steps): worked from the first checkpoint. Checkpoints
+   after about 2,000 steps overfit, so **checkpoint 1,500** was chosen from the comparison grid.
+6. **Full evaluation**, then published the LoRA with a model card on Hugging Face.
+
+## Results (run 02, checkpoint 1,500)
+
+Means per condition over 3 seeds. "Unseen" = drone, smartwatch, VR headset, electric scooter, robot arm, foldable phone.
 
 | Condition | Subjects | White border ↑ | Gray share ↓ | Color leak ↓ | CLIP subject ↑ | Sim. to training set |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -39,18 +74,56 @@ scooter, robot arm, foldable phone.
 | B: prompt only | seen-type | 0.151 | 0.186 | 0.049 | 0.302 | 0.507 |
 | **C: LoRA @ 0.7** | **seen-type** | **0.999** | **0.023** | **0.000** | **0.315** | 0.693 |
 
-- Against the best plain prompt (B), the LoRA turns beige "old paper" pages white (border 0.44 → 0.998) and cuts
-  mid-gray shading 6-8×, while the CLIP subject score holds or slightly improves. It generalizes: unseen gadgets score
-  the same as seen object types.
-- 0.7 is the recommended strength: 1.0 whitens slightly more but starts to cost subject fidelity.
-- Adding style words on top of the trigger (condition D) changes almost nothing; the trigger carries the style.
-- Limits: these are automated proxies on 30 images per condition. They don't catch fake text, extra objects or
-  mechanically impossible parts; check the grids. Similarity to the training set rises (0.60 → 0.68), consistent with
-  learning the style rather than copying images, but it is not a full memorization test.
+*White border* = share of near-white pixels around the edge (a patent figure sits on a white page). *Gray share* =
+share of mid-gray pixels (line art is mostly pure black or white). *CLIP subject* = how well the image still matches the
+plain object name, i.e. whether the drone is still a drone.
 
-Full notes: [`notes/learning-log.md`](notes/learning-log.md). Configs for each run are in [`configs/`](configs/).
+## What we achieved
 
-## Run it entirely in Google Colab
+- **The LoRA beats prompting on what makes a patent drawing.** Against the best plain prompt, the page goes from beige
+  "old paper" to white (border 0.44 → 0.998 on unseen objects) and muddy gray shading drops 6–8×.
+- **Without losing the subject.** The CLIP subject score holds and slightly improves (0.301 → 0.316).
+- **It generalizes.** Gadgets that were never in the training set score the same as the trained object types.
+- **The trigger carries the style by itself.** Adding style words on top of `ptnt_style` changes almost nothing.
+- **It picked up a real patent convention** without being told: dashed lines for parts that aren't claimed.
+- A small, shareable result: a 59.5 MB adapter trained on 24 images in under two hours on one L4.
+
+## Lessons learned
+
+- **Measure against a strong baseline.** SDXL already draws decent line art when prompted; the LoRA's value turned out
+  to be the page (white, one centered figure, no fake text), which only the baseline comparison revealed.
+- **A white background is a training problem, not a prompt problem.** Noise offset was the single change that took
+  backgrounds from peach to white.
+- **Train the text encoder when the trigger is a made-up word.** UNet-only training left the desk lamp untouched at
+  any strength; with text-encoder training it switched at step 500.
+- **Save checkpoints and look at them.** The last checkpoint was not the best: by step 3,000 the quadcopter had six arms.
+- **Dataset variety matters more than size.** With only 24 images, a batch dominated by one category (clothing) would
+  have taught the category instead of the style.
+- **Notebook plumbing breaks in boring ways.** Fixed along the way: an old `torchao` in Colab breaking PEFT, the
+  `image-to-text` pipeline removed in transformers 5, a file named `checkpoint_*` derailing resume, and Google Drive
+  disconnecting mid-session.
+
+## Limitations
+
+- Automated metrics on 30 images per condition are proxies. They don't catch fake text, extra objects or mechanically
+  impossible parts; the grids need a human look.
+- Similarity to the training set rises (0.60 → 0.68), consistent with learning a style, but this is not a full
+  memorization test.
+- Generated figures are illustrations, not valid patent drawings, and carry no legal meaning.
+- One base model, one dataset, one rank. Results may not transfer to SDXL derivatives without retesting.
+
+## Next steps
+
+- Launch the "Patent My Idea" demo as a Hugging Face ZeroGPU Space.
+- Commit the 24-image dataset, captions and manifest to this repo.
+- Add a comparison image (prompt-only vs. LoRA) to this README.
+- Try rank 8 vs. 32 and fewer training images to find the smallest LoRA that still works.
+
+Full run-by-run notes: [`notes/learning-log.md`](notes/learning-log.md). Training configs: [`configs/`](configs/).
+
+## Reproduce it
+
+### Run it entirely in Google Colab
 
 **One-time setup (2 minutes):** in Google Drive, create a folder named `patent-lora` in My Drive and upload
 `patent-drawing-lora.zip` into it. Every notebook unpacks it to `MyDrive/patent-lora/repo` on first run and works
@@ -66,7 +139,7 @@ Open each notebook in Colab with **File → Upload notebook** (or open it from `
 | 4 | `03_eval_colab.ipynb`, rest | **L4** | full eval with your checkpoint, publish to the Hub | 40 min |
 | 5 | `demo/` | Hugging Face Space | upload `app.py`, `requirements.txt`, `SPACE_README.md` (as `README.md`) to a ZeroGPU Space | 20 min |
 
-### Using the Colab extension in VS Code
+#### Using the Colab extension in VS Code
 
 The notebooks also run from VS Code with Google's Colab extension:
 
@@ -81,7 +154,7 @@ Colab Secrets, and if the last "disconnect" cell can't stop the runtime, use **C
 Expect roughly 5-8 compute units for one full run. Each GPU notebook ends with a cell that disconnects
 the runtime; run it so an idle GPU doesn't keep using units.
 
-## Optional: run the data steps on a laptop instead
+### Optional: run the data steps on a laptop instead
 
 | Step | Command |
 | --- | --- |
@@ -93,7 +166,7 @@ the runtime; run it so an idle GPU doesn't keep using units.
 
 Then copy the project folder to `MyDrive/patent-lora/repo` and continue with the training notebook.
 
-### Laptop setup (Windows)
+#### Laptop setup (Windows)
 
 ```powershell
 cd patent-drawing-lora
@@ -106,7 +179,7 @@ python -c "import torch; print(torch.cuda.is_available(), torch.cuda.get_device_
 pytest -q   # data-prep and metric tests, CPU only
 ```
 
-## Picking images
+### Picking images
 
 In the picker (or the contact sheets on a laptop), pick drawings that are:
 
@@ -122,7 +195,7 @@ lost parts of the object, or were flagged as possibly having a second figure.
 **Rights check:** open each patent's `source_url` from `dataset/manifest.csv` and confirm the text has
 no copyright notice (37 CFR 1.71(d)); then write `no notice` in `copyright_notice_checked`.
 
-## Captions
+### Captions
 
 The caption editor (notebook 01, step 7) stores one row per image in `captions.csv`: `object` (e.g. `a cordless power drill`) and `view`
 (perspective / front / side / top / rear / bottom / exploded view). Describe the object and the view only.
@@ -135,7 +208,7 @@ Saving produces lines like `ptnt_style, side view of a cordless power drill` in 
 ```
 configs/train_sdxl.yaml       every training hyperparameter (copied next to each run's checkpoints)
 dataset/selection.txt         your hand-picked sheet IDs
-dataset/images/               20 cleaned 1024px PNGs + metadata.jsonl (public domain, committed)
+dataset/images/               24 cleaned 1024px PNGs + metadata.jsonl (on Drive; to be committed)
 dataset/manifest.csv          patent number, date, sheet, source URL, rights check
 dataset/captions.csv          editable captions (object + view)
 scripts/fetch_candidates.py   download DeepPatent shards + contact sheets
