@@ -42,7 +42,7 @@ flowchart LR
     E --> F[Publish]
 ```
 
-- **Data:** 24 public-domain US design-patent figures (DeepPatent), labels removed, padded to 1024×1024.
+- **Data:** 24 public-domain US design-patent figures (DeepPatent), labels removed, padded to 1024×1024. In [`dataset/`](dataset/), with sources in [`manifest.csv`](dataset/manifest.csv).
 - **Captions:** trigger + view + object only, no style words.
 - **Training:** Diffusers SDXL LoRA script, rank 16, LR 1e-4, noise offset 0.1, UNet + text encoders, checkpoint 1,500 of 3,000.
 - **Eval:** 10 subjects (6 unseen) × 3 seeds, fixed settings across all conditions.
@@ -89,7 +89,7 @@ Details: [`notes/learning-log.md`](notes/learning-log.md)
 
 ```
 configs/     training configs per run
-dataset/     filled by notebook 01 (picks, images, captions, manifest)
+dataset/     the 24 training images, captions, manifest (patent numbers + sources)
 eval/        fixed eval prompts and seeds
 scripts/     data prep, captions, eval, metrics, Colab widgets
 notebooks/   Colab notebooks 01-03
