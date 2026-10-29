@@ -37,15 +37,18 @@ Train a style LoRA on 24 images and test whether it beats a well-written prompt 
 flowchart LR
     A[DeepPatent<br/>3,000 sheets] --> B[24 hand-picked<br/>figures]
     B --> C[Clean + caption]
-    C --> D[Train LoRA<br/>Colab L4]
-    D --> E[Evaluate vs.<br/>prompt-only]
-    E --> F[Publish]
+    C --> D[Baselines<br/>no LoRA]
+    D --> E[Run 1<br/>failed]
+    E -->|noise offset,<br/>text encoder| F[Run 2]
+    F --> G[Pick<br/>checkpoint 1,500]
+    G --> H[Evaluate vs.<br/>prompt-only]
+    H --> I[Publish]
 ```
 
 - **Data:** 24 public-domain US design-patent figures (DeepPatent), labels removed, padded to 1024×1024. In [`dataset/`](dataset/), with sources in [`manifest.csv`](dataset/manifest.csv).
 - **Captions:** trigger + view + object only, no style words.
 - **Training:** Diffusers SDXL LoRA script, rank 16, LR 1e-4, noise offset 0.1, UNet + text encoders, checkpoint 1,500 of 3,000.
-- **Eval:** 10 subjects (6 unseen) × 3 seeds, fixed settings across all conditions.
+- **Eval:** 10 subjects (6 unseen) × 3 seeds, fixed settings across all conditions; prompts fixed and baselines rendered before training.
 
 ## Results
 
