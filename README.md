@@ -52,20 +52,15 @@ flowchart LR
 
 ## Results
 
-Unseen objects (drone, smartwatch, VR headset, scooter, robot arm, foldable phone):
-
-| Condition | White border ↑ | Gray share ↓ | CLIP subject ↑ |
-| --- | --- | --- | --- |
-| No LoRA, plain prompt | 0.001 | 0.746 | 0.284 |
-| No LoRA, "patent drawing … line art" | 0.440 | 0.241 | 0.301 |
-| **LoRA @ 0.7** | **0.998** | **0.038** | **0.316** |
-| LoRA @ 1.0 | 0.999 | 0.027 | 0.308 |
-
-*White border:* share of near-white pixels at the image edge. *Gray share:* share of mid-gray pixels (line art is mostly pure black or white). *CLIP subject:* similarity to the plain object name, i.e. whether the drone is still a drone.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/results-dark.svg">
+  <img alt="Bar charts comparing a plain prompt, a 'patent drawing' prompt and the LoRA at 0.7 on unseen objects: white page 0.1%, 44.0%, 99.8%; gray shading 74.6%, 24.1%, 3.8%; CLIP subject score 0.284, 0.301, 0.316." src="docs/results-light.svg">
+</picture>
 
 - White page instead of beige paper; 6× less gray shading; subject preserved.
 - Same results on unseen objects as on trained object types.
 - Run 1 (UNet only, 1,500 steps) failed: colored backgrounds, weak trigger. Run 2 added noise offset, text-encoder training and more steps, which resolved both.
+- Strength 1.0 is slightly whiter but lowers the subject score (0.308), so 0.7 is the default.
 - Checkpoints after ~2,000 steps overfit.
 
 Details: [`notes/learning-log.md`](notes/learning-log.md)
@@ -97,6 +92,7 @@ eval/        fixed eval prompts and seeds
 scripts/     data prep, captions, eval, metrics, Colab widgets
 notebooks/   Colab notebooks 01-03
 demo/        Gradio app + model card
+docs/        README chart (scripts/plot_results.py)
 notes/       run-by-run log
 tests/       CPU tests (pytest)
 ```
